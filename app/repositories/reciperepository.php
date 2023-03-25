@@ -67,6 +67,7 @@ class RecipeRepository extends Repository
             ]);
 
             $this->insertRecipeIngredients($recipe, $this->connection->lastInsertId());
+
             return $this->getOne($recipe->id);
         } catch (PDOException $e) {
             echo $e;

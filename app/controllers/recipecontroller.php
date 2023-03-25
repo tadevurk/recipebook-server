@@ -51,6 +51,7 @@ class RecipeController extends Controller
         } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
+
         $this->respond($recipe);
     }
 
