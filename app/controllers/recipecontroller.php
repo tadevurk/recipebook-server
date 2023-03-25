@@ -27,7 +27,6 @@ class RecipeController extends Controller
         }
 
         $recipes = $this->service->getAll($offset, $limit);
-
         $this->respond($recipes);
     }
 
