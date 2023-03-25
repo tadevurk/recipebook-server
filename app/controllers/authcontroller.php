@@ -34,7 +34,12 @@ class AuthController extends Controller
         // generate jwt
         $tokenResponse = $this->generateJwt($user);
 
-        $this->respond($tokenResponse);
+        $data = array();
+
+        $data["token"] = $tokenResponse;
+        $data["user"] = $user;
+        
+        $this->respond($data);
     }
 
     function register()
