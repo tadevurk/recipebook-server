@@ -20,6 +20,7 @@ $router->get('/recipes/(\d+)', 'RecipeController@getOne');
 $router->post('/recipes', 'RecipeController@create');
 $router->put('/recipes/(\d+)', 'RecipeController@update');
 $router->delete('/recipes/(\d+)', 'RecipeController@delete');
+$router->get('/recipes/autocomplete', 'RecipeController@getRecipesForAutocomplete');
 
 // routes for the ingredients endpoint
 $router->get('/ingredients', 'IngredientController@getAll');

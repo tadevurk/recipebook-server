@@ -201,5 +201,27 @@ class RecipeRepository extends Repository
         }
         return true;
     }
+
+    // Get the recipes for autocomplete suggest 4 each time
+    function getRecipesForAutocomplete(string $name)
+    {
+        try {
+            $stmt = $this->connection->prepare("SELECT * FROM recipe WHERE name LIKE :name LIMIT 4");
+            $stmt->execute([
+                ':name' => "%$name%"
+            ]);
+
+            $recipes = array();
+            while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
+                $recipes[] = $this->rowToRecipe($row);
+            }
+
+            return $recipes;
+        }
+        catch (PDOException $e) {
+            echo $e;
+        }
+    }
+
 }
 ?>

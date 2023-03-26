@@ -31,6 +31,10 @@ class RecipeService {
     public function delete($id){
         return $this->repository->delete($id);
     }
+
+    public function getRecipesForAutocomplete($name) {
+        return $this->repository->getRecipesForAutocomplete($name);
+    }
 }
 
 ?>

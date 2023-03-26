@@ -75,6 +75,13 @@ class RecipeController extends Controller
         }
         $this->respond($recipe);
     }
+
+    public function getRecipesForAutocomplete()
+    {
+        $name = $this->createObjectFromPostedJson("Models\\Recipe")->name;
+        $recipes = $this->service->getRecipesForAutocomplete($name);
+        $this->respond($recipes);
+    }
 }
 
 ?>
