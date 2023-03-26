@@ -21,6 +21,9 @@ $router->post('/recipes', 'RecipeController@create');
 $router->put('/recipes/(\d+)', 'RecipeController@update');
 $router->delete('/recipes/(\d+)', 'RecipeController@delete');
 
+// routes for the ingredients endpoint
+$router->get('/ingredients', 'IngredientController@getAll');
+
 // routes for the auth endpoint
 $router->post('/auth/login', 'AuthController@login');
 $router->post('/auth/register', 'AuthController@register');
