@@ -5,6 +5,7 @@ use PDO;
 use PDOException;
 use Repositories\Repository;
 use Models\Recipe;
+use Models\Ingredient;
 
 
 class RecipeRepository extends Repository
@@ -72,6 +73,37 @@ class RecipeRepository extends Repository
         } catch (PDOException $e) {
             echo $e;
         }
+    }
+
+    function getRecipeIngredients($id){
+        try {
+            $query = "SELECT ingredients.id, ingredients.name as name, recipe_ingredients.quantity as quantity, recipe_ingredients.unit as unit FROM `recipe_ingredients` 
+            join recipe on recipe.id = recipe_ingredients.recipe_id join ingredients on ingredients.id = recipe_ingredients.ingredients_id
+            WHERE recipe_ingredients.recipe_id = :id";
+
+            $stmt = $this->connection->prepare($query);
+            $stmt->bindParam(':id', $id);
+            $stmt->execute();
+
+            $ingredients = array();
+            while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
+                $ingredients[] = $this->rowToIngredient($row);
+            }
+
+            return $ingredients;
+        } catch (PDOException $e) {
+            echo $e;
+        }
+    }
+
+    function rowToIngredient($row){
+        $ingredient = new Ingredient();
+        $ingredient->id = $row['id'];
+        $ingredient->name = $row['name'];
+        $ingredient->quantity = $row['quantity'];
+        $ingredient->unit = $row['unit'];
+
+        return $ingredient;
     }
 
     function getIngredientIDByName($name)
@@ -213,12 +245,11 @@ class RecipeRepository extends Repository
 
             $recipes = array();
             while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
-                $recipes[] = $this->rowToRecipe($row);
+                $recipes[] = $row['name'];
             }
 
             return $recipes;
-        }
-        catch (PDOException $e) {
+        } catch (PDOException $e) {
             echo $e;
         }
     }

@@ -43,6 +43,18 @@ class RecipeController extends Controller
         $this->respond($recipe);
     }
 
+    public function getRecipeIngredients($id){
+        $recipe = $this->service->getRecipeIngredients($id);
+
+        // we might need some kind of error checking that returns a 404 if the recipe is not found in the DB
+        if (!$recipe) {
+            $this->respondWithError(404, "Recipe not found");
+            return;
+        }
+
+        $this->respond($recipe);
+    }
+
     public function create()
     {
         try {

@@ -20,6 +20,10 @@ class RecipeService {
         return $this->repository->getOne($id);
     }
 
+    public function getRecipeIngredients($id) {
+        return $this->repository->getRecipeIngredients($id);
+    }
+
     public function insert($item) {       
         return $this->repository->insert($item);      
     }
