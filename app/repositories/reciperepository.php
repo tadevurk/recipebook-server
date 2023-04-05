@@ -35,6 +35,16 @@ class RecipeRepository extends Repository
         }
     }
 
+    function rowToIngredient($row)
+    {
+        $ingredient = new Ingredient();
+        $ingredient->id = $row['id'];
+        $ingredient->name = $row['name'];
+        $ingredient->quantity = $row['quantity'];
+        $ingredient->unit = $row['unit'];
+
+        return $ingredient;
+    }
     function getOne($id)
     {
         try {
@@ -58,7 +68,7 @@ class RecipeRepository extends Repository
     {
         try {
             $stmt = $this->connection->prepare("INSERT into recipe (name, cuisine, instructions, created_at, user_id) 
-            VALUES (:name,:cuisine,:instructions, now(), :user_id)");
+        VALUES (:name,:cuisine,:instructions, now(), :user_id)");
 
             $stmt->execute([
                 ':name' => $recipe->name,
@@ -67,7 +77,8 @@ class RecipeRepository extends Repository
                 ':user_id' => $recipe->user_id
             ]);
 
-            $this->insertRecipeIngredients($recipe, $this->connection->lastInsertId());
+            $recipe->id = $this->connection->lastInsertId();
+            $this->insertRecipeIngredients($recipe, $recipe->id);
 
             return $this->getOne($recipe->id);
         } catch (PDOException $e) {
@@ -75,7 +86,9 @@ class RecipeRepository extends Repository
         }
     }
 
-    function getRecipeIngredients($id){
+
+    function getRecipeIngredients($id)
+    {
         try {
             $query = "SELECT ingredients.id, ingredients.name as name, recipe_ingredients.quantity as quantity, recipe_ingredients.unit as unit FROM `recipe_ingredients` 
             join recipe on recipe.id = recipe_ingredients.recipe_id join ingredients on ingredients.id = recipe_ingredients.ingredients_id
@@ -96,15 +109,6 @@ class RecipeRepository extends Repository
         }
     }
 
-    function rowToIngredient($row){
-        $ingredient = new Ingredient();
-        $ingredient->id = $row['id'];
-        $ingredient->name = $row['name'];
-        $ingredient->quantity = $row['quantity'];
-        $ingredient->unit = $row['unit'];
-
-        return $ingredient;
-    }
 
     function getIngredientIDByName($name)
     {
@@ -133,11 +137,20 @@ class RecipeRepository extends Repository
         foreach ($recipe->ingredients as $ingredient) {
             $stmt->execute([
                 'recipe_id' => $lastInsertedID,
-                'ingredients_id' => $this->getIngredientIDByName($ingredient['ingredient']),
-                'quantity' => $ingredient->quantity,
-                'unit' => $ingredient->unit
+                'ingredients_id' => $this->getIngredientIDByName($ingredient['name']),
+                'quantity' => $ingredient['quantity'],
+                'unit' => $ingredient['unit']
             ]);
         }
+    }
+
+
+    function deleteRecipeIngredient($id)
+    {
+        $stmt = $this->connection->prepare("DELETE FROM recipe_ingredients WHERE recipe_ingredients.recipe_id = :id");
+        $stmt->execute([
+            ':id' => $id
+        ]);
     }
 
     function rowToRecipe($row)
@@ -193,32 +206,35 @@ class RecipeRepository extends Repository
     }
 
     // Updating the recipe ingredients
-    function updateRecipeIngredients($recipeID, $ingredient_ID, $unit, $quantity)
+    // function updateRecipeIngredients($recipeId, $ingredients)
+    // {
+    //     $query = "UPDATE recipe_ingredients SET quantity = :quantity, unit = :unit WHERE ingredients_id = :ingredients_id AND recipe_id = :recipe_id";
+    //     $stmt = $this->connection->prepare($query);
+
+    //     foreach ($ingredients as $ingredient) {
+    //         $stmt->execute([
+    //             ':quantity' => $ingredient['quantity'],
+    //             ':unit' => $ingredient['unit'],
+    //             ':ingredients_id' => $ingredient['id'],
+    //             ':recipe_id' => $recipeId
+    //         ]);
+    //     }
+    // }
+
+    function updateRecipeIngredients($recipeId, $ingredient)
     {
-        $query = "UPDATE recipe_ingredients SET quantity = :quantity, unit = :unit WHERE ingredients_id = :ingredients_id AND recipe_id = :recipe_id";
+        $query = "UPDATE recipe_ingredients SET quantity = :quantity, unit = :unit WHERE ingredients_id = :id AND recipe_id = :recipe_id";
         $stmt = $this->connection->prepare($query);
 
         $stmt->execute([
-            ':quantity' => $quantity,
-            ':unit' => $unit,
-            ':ingredients_id' => $ingredient_ID,
-            ':recipe_id' => $recipeID
+            ':quantity' => $ingredient->quantity,
+            ':unit' => $ingredient->unit,
+            ':id' => $ingredient->id,
+            ':recipe_id' => $recipeId
         ]);
     }
 
-    // While updating recipe, if there is a new ingredient added, insert it into the recipe_ingredients table
-    function addRecipeIngredients($recipeID, $ingredient_id, $unit, $quantity)
-    {
-        $stmt = $this->connection->prepare("INSERT into recipe_ingredients (recipe_id, ingredients_id, quantity, unit) 
-        VALUES (:recipe_id,:ingredients_id,:quantity,:unit)");
 
-        $stmt->execute([
-            'recipe_id' => $recipeID,
-            'ingredients_id' => $ingredient_id,
-            'quantity' => $quantity,
-            'unit' => $unit
-        ]);
-    }
 
     // Delete the recipe
     function delete($id)
@@ -235,20 +251,41 @@ class RecipeRepository extends Repository
     }
 
     // Get the recipes for autocomplete suggest 4 each time
-    function getRecipesForAutocomplete(string $name)
+    function getRecipesForAutocomplete($name)
     {
         try {
-            $stmt = $this->connection->prepare("SELECT * FROM recipe WHERE name LIKE :name LIMIT 4");
+            $stmt = $this->connection->prepare("SELECT id, name FROM recipe WHERE name LIKE :name LIMIT 4");
             $stmt->execute([
                 ':name' => "%$name%"
             ]);
 
             $recipes = array();
             while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
-                $recipes[] = $row['name'];
+                //return row just id and name
+                $recipes[] = $row;
             }
 
             return $recipes;
+        } catch (PDOException $e) {
+            echo $e;
+        }
+    }
+
+    function getIngredientsByNames($names)
+    {
+        try {
+            $placeholders = implode(',', array_fill(0, count($names), '?'));
+            $query = "SELECT * FROM ingredients WHERE name IN ($placeholders)";
+
+            $stmt = $this->connection->prepare($query);
+            $stmt->execute($names);
+
+            $ingredients = array();
+            while (($row = $stmt->fetch(PDO::FETCH_ASSOC)) !== false) {
+                $ingredients[] = $row;
+            }
+
+            return $ingredients;
         } catch (PDOException $e) {
             echo $e;
         }

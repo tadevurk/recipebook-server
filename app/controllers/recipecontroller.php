@@ -43,7 +43,8 @@ class RecipeController extends Controller
         $this->respond($recipe);
     }
 
-    public function getRecipeIngredients($id){
+    public function getRecipeIngredients($id)
+    {
         $recipe = $this->service->getRecipeIngredients($id);
 
         // we might need some kind of error checking that returns a 404 if the recipe is not found in the DB
@@ -59,7 +60,17 @@ class RecipeController extends Controller
     {
         try {
             $recipe = $this->createObjectFromPostedJson("Models\\Recipe");
+
+            $ingredients = [];
+
+            foreach ($recipe->ingredients as $ingredient) {
+                $ingredients[] = ['name' => $ingredient->name, 'unit' => $ingredient->unit, 'quantity' => $ingredient->quantity];
+                $recipe->ingredients = $ingredients;
+            }
+
+            // insert the recipe
             $recipe = $this->service->insert($recipe);
+
         } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
@@ -70,13 +81,54 @@ class RecipeController extends Controller
     public function update($id)
     {
         try {
-            $recipe = $this->createObjectFromPostedJson("Models\\Recipe");
-            $recipe = $this->service->update($recipe, $id);
+            $_recipe = $this->createObjectFromPostedJson("Models\\Recipe");
+            $updated_recipe = $this->service->update($_recipe, $_recipe->id);
+
+            $ingredient_names = [];
+
+            foreach ($_recipe->ingredients as $ingredient) {
+                $ingredient_names[] = $ingredient->name;
+            }
+
+            // get ingredients by their names and add them to the recipe
+            $db_ingredients = $this->service->getIngredientsByNames($ingredient_names);
+
+            $updated_ingredients = [];
+
+            foreach ($_recipe->ingredients as $ingredient) {
+                $found = false;
+                foreach ($db_ingredients as $db_ingredient) {
+                    if ($ingredient->name == $db_ingredient['name']) {
+                        // update the unit and quantity
+                        $db_ingredient['unit'] = $ingredient->unit;
+                        $db_ingredient['quantity'] = $ingredient->quantity;
+                        $updated_ingredients[] = $db_ingredient;
+                        $this->service->updateRecipeIngredients($updated_recipe->id, (object) $db_ingredient);
+                        $found = true;
+                        break;
+                    }
+                }
+                if (!$found) {
+                    // insert new ingredient
+                    $updated_ingredients[] = ['name' => $ingredient->name, 'unit' => $ingredient->unit, 'quantity' => $ingredient->quantity];
+                    $this->service->insertRecipeIngredients($_recipe, $_recipe->id);
+                }
+
+                // delete all old ingredients from recipe ingredients
+                $this->service->deleteRecipeIngredient($updated_recipe->id);
+
+                // update the recipe with the updated ingredients
+                $updated_recipe->ingredients = $updated_ingredients;
+
+            }
         } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());
         }
-        $this->respond($recipe);
+        $this->respond($updated_recipe);
     }
+
+
+
 
     public function delete($id)
     {
@@ -90,10 +142,13 @@ class RecipeController extends Controller
 
     public function getRecipesForAutocomplete()
     {
+        // send the recipe name to the service as json
         $name = $this->createObjectFromPostedJson("Models\\Recipe")->name;
         $recipes = $this->service->getRecipesForAutocomplete($name);
         $this->respond($recipes);
     }
+
+
 }
 
 ?>
