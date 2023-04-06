@@ -144,12 +144,29 @@ class RecipeRepository extends Repository
         }
     }
 
-
-    function deleteRecipeIngredient($id)
+    // TODO: duplication
+    function insertRecipeIngredientss($recipe, $lastInsertedID)
     {
-        $stmt = $this->connection->prepare("DELETE FROM recipe_ingredients WHERE recipe_ingredients.recipe_id = :id");
+        $stmt = $this->connection->prepare("INSERT into recipe_ingredients (recipe_id, ingredients_id, quantity, unit) 
+        VALUES (:recipe_id,:ingredients_id,:quantity,:unit)");
+
+        foreach ($recipe->ingredients as $ingredient) {
+            $stmt->execute([
+                'recipe_id' => $lastInsertedID,
+                'ingredients_id' => $this->getIngredientIDByName($ingredient->name),
+                'quantity' => $ingredient->quantity,
+                'unit' => $ingredient->unit
+            ]);
+        }
+    }
+
+
+    function deleteRecipeIngredient($recipe_id ,$ingredient_id)
+    {
+        $stmt = $this->connection->prepare("DELETE FROM recipe_ingredients WHERE recipe_ingredients.ingredients_id = :id AND recipe_ingredients.recipe_id = :recipe_id");
         $stmt->execute([
-            ':id' => $id
+            ':id' => $ingredient_id,
+            ':recipe_id' => $recipe_id
         ]);
     }
 
@@ -205,7 +222,7 @@ class RecipeRepository extends Repository
         }
     }
 
-    // Updating the recipe ingredients
+    //Updating the recipe ingredients
     // function updateRecipeIngredients($recipeId, $ingredients)
     // {
     //     $query = "UPDATE recipe_ingredients SET quantity = :quantity, unit = :unit WHERE ingredients_id = :ingredients_id AND recipe_id = :recipe_id";

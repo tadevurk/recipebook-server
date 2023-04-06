@@ -24,7 +24,7 @@ $router->post('/recipes/autocomplete', 'RecipeController@getRecipesForAutocomple
 $router->get('/recipes/(\d+)/ingredients', 'RecipeController@getRecipeIngredients');
 
 // routes for the ingredients endpoint
-$router->get('/ingredients', 'IngredientController@getAll');
+$router->post('/ingredients', 'IngredientController@getAll');
 
 // routes for the auth endpoint
 $router->post('/auth/login', 'AuthController@login');

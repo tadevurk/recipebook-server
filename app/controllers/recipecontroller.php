@@ -65,9 +65,9 @@ class RecipeController extends Controller
 
             foreach ($recipe->ingredients as $ingredient) {
                 $ingredients[] = ['name' => $ingredient->name, 'unit' => $ingredient->unit, 'quantity' => $ingredient->quantity];
-                $recipe->ingredients = $ingredients;
             }
 
+            $recipe->ingredients = $ingredients;
             // insert the recipe
             $recipe = $this->service->insert($recipe);
 
@@ -77,6 +77,7 @@ class RecipeController extends Controller
 
         $this->respond($recipe);
     }
+
 
     public function update($id)
     {
@@ -92,6 +93,8 @@ class RecipeController extends Controller
 
             // get ingredients by their names and add them to the recipe
             $db_ingredients = $this->service->getIngredientsByNames($ingredient_names);
+
+            //$ingredientsInRecipe = $this->service->getRecipeIngredientsByNames($ingredient_names);
 
             $updated_ingredients = [];
 
@@ -109,17 +112,14 @@ class RecipeController extends Controller
                     }
                 }
                 if (!$found) {
-                    // insert new ingredient
+                    // insert the ingredient
                     $updated_ingredients[] = ['name' => $ingredient->name, 'unit' => $ingredient->unit, 'quantity' => $ingredient->quantity];
-                    $this->service->insertRecipeIngredients($_recipe, $_recipe->id);
+                    //TODO: duplication
+                    var_dump($updated_ingredients);
+                    $this->service->insertRecipeIngredientss($_recipe, $_recipe->id);
                 }
-
-                // delete all old ingredients from recipe ingredients
-                $this->service->deleteRecipeIngredient($updated_recipe->id);
-
                 // update the recipe with the updated ingredients
                 $updated_recipe->ingredients = $updated_ingredients;
-
             }
         } catch (Exception $e) {
             $this->respondWithError(500, $e->getMessage());

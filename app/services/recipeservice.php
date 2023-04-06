@@ -44,16 +44,25 @@ class RecipeService {
         return $this->repository->getIngredientsByNames($names);
     }
 
+    public function getRecipeIngredientsByNames($names) {
+        return $this->repository->getRecipeIngredientsByNames($names);
+    }
+
     public function updateRecipeIngredients($recipeId, $ingredients) {
         return $this->repository->updateRecipeIngredients($recipeId, $ingredients);
     }
 
-    public function deleteRecipeIngredient($id){
-        return $this->repository->deleteRecipeIngredient($id);
+    public function deleteRecipeIngredient($recipeId, $ingredientId){
+        return $this->repository->deleteRecipeIngredient($recipeId, $ingredientId);
     }
 
     public function insertRecipeIngredients($recipeId, $ingredients) {
         return $this->repository->insertRecipeIngredients($recipeId, $ingredients);
+    }
+
+    //TODO: duplicate code, refactor
+    public function insertRecipeIngredientss($recipeId, $ingredients) {
+        return $this->repository->insertRecipeIngredientss($recipeId, $ingredients);
     }
 }
 
