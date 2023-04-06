@@ -144,6 +144,21 @@ class RecipeRepository extends Repository
         }
     }
 
+    function insertRecipeIngredient($recipeId, $ingredients)
+    {
+        $stmt = $this->connection->prepare("INSERT into recipe_ingredients (recipe_id, ingredients_id, quantity, unit) 
+        VALUES (:recipe_id,:ingredients_id,:quantity,:unit)");
+
+        foreach($ingredients as $ingredient) {
+            $stmt->execute([
+                'recipe_id' => $recipeId,
+                'ingredients_id' => $ingredient['id'],
+                'quantity' => $ingredient['quantity'],
+                'unit' => $ingredient['unit']
+            ]);
+        }
+    }
+
     // TODO: duplication
     function insertRecipeIngredientss($recipe, $lastInsertedID)
     {
@@ -161,7 +176,7 @@ class RecipeRepository extends Repository
     }
 
 
-    function deleteRecipeIngredient($recipe_id ,$ingredient_id)
+    function deleteRecipeIngredient($recipe_id, $ingredient_id)
     {
         $stmt = $this->connection->prepare("DELETE FROM recipe_ingredients WHERE recipe_ingredients.ingredients_id = :id AND recipe_ingredients.recipe_id = :recipe_id");
         $stmt->execute([
@@ -222,21 +237,6 @@ class RecipeRepository extends Repository
         }
     }
 
-    //Updating the recipe ingredients
-    // function updateRecipeIngredients($recipeId, $ingredients)
-    // {
-    //     $query = "UPDATE recipe_ingredients SET quantity = :quantity, unit = :unit WHERE ingredients_id = :ingredients_id AND recipe_id = :recipe_id";
-    //     $stmt = $this->connection->prepare($query);
-
-    //     foreach ($ingredients as $ingredient) {
-    //         $stmt->execute([
-    //             ':quantity' => $ingredient['quantity'],
-    //             ':unit' => $ingredient['unit'],
-    //             ':ingredients_id' => $ingredient['id'],
-    //             ':recipe_id' => $recipeId
-    //         ]);
-    //     }
-    // }
 
     function updateRecipeIngredients($recipeId, $ingredient)
     {
@@ -244,14 +244,12 @@ class RecipeRepository extends Repository
         $stmt = $this->connection->prepare($query);
 
         $stmt->execute([
-            ':quantity' => $ingredient->quantity,
-            ':unit' => $ingredient->unit,
-            ':id' => $ingredient->id,
+            ':quantity' => $ingredient['quantity'],
+            ':unit' => $ingredient['unit'],
+            ':id' => $ingredient['id'],
             ':recipe_id' => $recipeId
         ]);
     }
-
-
 
     // Delete the recipe
     function delete($id)

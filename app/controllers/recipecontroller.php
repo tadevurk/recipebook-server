@@ -81,50 +81,83 @@ class RecipeController extends Controller
 
     public function update($id)
     {
-        try {
-            $_recipe = $this->createObjectFromPostedJson("Models\\Recipe");
-            $updated_recipe = $this->service->update($_recipe, $_recipe->id);
+        $_recipe = $this->createObjectFromPostedJson("Models\\Recipe");
+        $this->service->update($_recipe, $_recipe->id);
+        // --------------------------------------------
 
-            $ingredient_names = [];
+        // Get the current ingredients from the database, it has all the information of ingredients
+        $currentIngredients = $this->service->getRecipeIngredients($id);
 
-            foreach ($_recipe->ingredients as $ingredient) {
-                $ingredient_names[] = $ingredient->name;
-            }
+        // Get the updated ingredients from the request data, it has only the name, unit and quantity NOT ID!
+        $updatedIngredients = $this->createObjectFromPostedJson("Models\\Recipe")->ingredients;
 
-            // get ingredients by their names and add them to the recipe
-            $db_ingredients = $this->service->getIngredientsByNames($ingredient_names);
-
-            //$ingredientsInRecipe = $this->service->getRecipeIngredientsByNames($ingredient_names);
-
-            $updated_ingredients = [];
-
-            foreach ($_recipe->ingredients as $ingredient) {
-                $found = false;
-                foreach ($db_ingredients as $db_ingredient) {
-                    if ($ingredient->name == $db_ingredient['name']) {
-                        // update the unit and quantity
-                        $db_ingredient['unit'] = $ingredient->unit;
-                        $db_ingredient['quantity'] = $ingredient->quantity;
-                        $updated_ingredients[] = $db_ingredient;
-                        $this->service->updateRecipeIngredients($updated_recipe->id, (object) $db_ingredient);
-                        $found = true;
-                        break;
-                    }
-                }
-                if (!$found) {
-                    // insert the ingredient
-                    $updated_ingredients[] = ['name' => $ingredient->name, 'unit' => $ingredient->unit, 'quantity' => $ingredient->quantity];
-                    //TODO: duplication
-                    var_dump($updated_ingredients);
-                    $this->service->insertRecipeIngredientss($_recipe, $_recipe->id);
-                }
-                // update the recipe with the updated ingredients
-                $updated_recipe->ingredients = $updated_ingredients;
-            }
-        } catch (Exception $e) {
-            $this->respondWithError(500, $e->getMessage());
+        $currentIngredientNames = [];
+        $currentIngredientUnits = [];
+        $currentIngredientQuantities = [];
+        foreach ($currentIngredients as $currentIngredient) {
+            $currentIngredientNames[] = $currentIngredient->name;
+            $currentIngredientUnits[] = $currentIngredient->unit;
+            $currentIngredientQuantities[] = $currentIngredient->quantity;
         }
-        $this->respond($updated_recipe);
+
+
+        $updatedIngredientNames = [];
+        foreach ($updatedIngredients as $updatedIngredient) {
+            $updatedIngredientNames[] = $updatedIngredient->name;
+        }
+
+        // get the ingredients that are in the database but not in the request data
+        $ingredientsToDeleteNames = array_diff($currentIngredientNames, $updatedIngredientNames);
+        $ingredientsToDelete = $this->service->getIngredientsByNames($ingredientsToDeleteNames);
+
+        // // delete the ingredients that are in the database but not in the request data
+        foreach ($ingredientsToDelete as $ingredientToDelete) {
+            $this->service->deleteRecipeIngredient($id, $ingredientToDelete['id']);
+        }
+
+        // get the name, unit, and quantity for the ingredients that are in the request data but not in the database
+        $ingredientsToInsertNames = array_diff($updatedIngredientNames, $currentIngredientNames);
+
+        // Create an array of the ingredients to insert
+        $ingredientsToInsert = [];
+        foreach ($updatedIngredients as $updatedIngredient) {
+            if (in_array($updatedIngredient->name, $ingredientsToInsertNames)) {
+                $ingredientData = [
+                    'id' => $this->service->getIngredientIdByName($updatedIngredient->name),
+                    'name' => $updatedIngredient->name,
+                    'unit' => $updatedIngredient->unit,
+                    'quantity' => $updatedIngredient->quantity
+                ];
+                $ingredientsToInsert[] = $ingredientData;
+                $this->service->insertRecipeIngredient($id, $ingredientsToInsert);
+            }
+        }
+
+        // get the name, unit, and quantity for the ingredients that are in the request data and in the database
+        $ingredientsToUpdateNames = array_intersect($updatedIngredientNames, $currentIngredientNames);
+        $ingredientsToUpdate = [];
+
+        foreach ($currentIngredients as $currentIngredient) {
+            if (in_array($currentIngredient->name, $ingredientsToUpdateNames)) {
+                $updatedIngredient = current(array_filter($updatedIngredients, function ($ingredient) use ($currentIngredient) {
+                    return $ingredient->name === $currentIngredient->name;
+                }));
+                $ingredientsToUpdate[] = [
+                    'id' => $currentIngredient->id,
+                    'name' => $updatedIngredient->name,
+                    'quantity' => $updatedIngredient->quantity,
+                    'unit' => $updatedIngredient->unit
+                ];
+            }
+        }
+        foreach ($ingredientsToUpdate as $ingredientToUpdate) {
+            $this->service->updateRecipeIngredients($id, $ingredientToUpdate);
+        }
+
+        // get the updated recipe from the database
+        $updatedRecipe = $this->service->getOne($id);
+
+        $this->respond($updatedRecipe);
     }
 
 
