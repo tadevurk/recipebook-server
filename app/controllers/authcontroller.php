@@ -10,11 +10,13 @@ use \Firebase\JWT\JWT;
 class AuthController extends Controller
 {
     private $service;
+    private $userService;
 
     // initialize services
     function __construct()
     {
         $this->service = new AuthService();
+        $this->userService = new UserService();
     }
 
     public function login()
@@ -38,9 +40,11 @@ class AuthController extends Controller
 
         $data["token"] = $tokenResponse;
         $data["user"] = $user;
-        
+
         $this->respond($data);
     }
+
+
 
     function register()
     {
@@ -52,7 +56,6 @@ class AuthController extends Controller
         }
         $this->respond($user);
     }
-
 
     function generateJwt($user)
     {
@@ -91,4 +94,5 @@ class AuthController extends Controller
                 "expireAt" => $expire
             );
     }
+
 }
