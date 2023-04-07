@@ -67,10 +67,6 @@ class RecipeService {
     public function insertRecipeIngredient($recipeId, $ingredient) {
         return $this->repository->insertRecipeIngredient($recipeId, $ingredient);
     }
-    //TODO: duplicate code, refactor
-    public function insertRecipeIngredientss($recipeId, $ingredients) {
-        return $this->repository->insertRecipeIngredientss($recipeId, $ingredients);
-    }
 }
 
 ?>

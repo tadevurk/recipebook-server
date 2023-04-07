@@ -82,8 +82,7 @@ class RecipeController extends Controller
     public function update($id)
     {
         $_recipe = $this->createObjectFromPostedJson("Models\\Recipe");
-        $this->service->update($_recipe, $_recipe->id);
-        // --------------------------------------------
+        $this->service->update($_recipe, $_recipe->id); // Update the recipe name, cuisine, instruction
 
         // Get the current ingredients from the database, it has all the information of ingredients
         $currentIngredients = $this->service->getRecipeIngredients($id);

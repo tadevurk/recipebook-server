@@ -63,6 +63,25 @@ class AuthRepository extends Repository
         }
     }
 
+    function getUserById($userId){
+        try {
+            // retrieve the user with the given username
+            $stmt = $this->connection->prepare("SELECT id, firstname, lastname, hashed_password, role, username FROM user WHERE id = :id");
+            $stmt->bindParam(':id', $userId);
+            $stmt->execute();
+
+            $stmt->setFetchMode(PDO::FETCH_CLASS, 'Models\User');
+            $user = $stmt->fetch();
+
+            // do not pass the password hash to the caller
+            $user->hashed_password = "";
+
+            return $user;
+        } catch (PDOException $e) {
+            echo $e;
+        }
+    }
+
     // verify the password hash
     function verifyPassword($input, $hash)
     {

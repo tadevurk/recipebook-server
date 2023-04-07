@@ -159,22 +159,6 @@ class RecipeRepository extends Repository
         }
     }
 
-    // TODO: duplication
-    function insertRecipeIngredientss($recipe, $lastInsertedID)
-    {
-        $stmt = $this->connection->prepare("INSERT into recipe_ingredients (recipe_id, ingredients_id, quantity, unit) 
-        VALUES (:recipe_id,:ingredients_id,:quantity,:unit)");
-
-        foreach ($recipe->ingredients as $ingredient) {
-            $stmt->execute([
-                'recipe_id' => $lastInsertedID,
-                'ingredients_id' => $this->getIngredientIDByName($ingredient->name),
-                'quantity' => $ingredient->quantity,
-                'unit' => $ingredient->unit
-            ]);
-        }
-    }
-
 
     function deleteRecipeIngredient($recipe_id, $ingredient_id)
     {
